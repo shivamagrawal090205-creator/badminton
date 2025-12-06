@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Badminton Scoreboard</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            color: white;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: auto;
+            margin-top: 40px;
+            padding: 30px;
+            background: #ffffff10;
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            box-shadow: 0 0 25px #00000060;
+        }
+
+        h1 { font-size: 32px; margin-bottom: 10px; }
+        h2 { font-weight: normal; color: #cbd5e1; }
+
+        input {
+            width: 90%;
+            padding: 12px;
+            margin: 10px;
+            font-size: 18px;
+            border-radius: 10px;
+            border: none;
+            background: #e2e8f0;
+        }
+
+        .page { display: none; }
+        .active { display: block; }
+
+        button {
+            padding: 14px 30px;
+            font-size: 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 12px;
+            background: #3b82f6;
+            color: white;
+            cursor: pointer;
+            width: 80%;
+            transition: 0.2s;
+        }
+
+        button:hover { background: #2563eb; transform: scale(1.05); }
+
+        .score-display {
+            font-size: 60px;
+            font-weight: bold;
+            margin: 15px 0 5px 0;
+        }
+
+        .team-label { font-size: 22px; color: #cbd5e1; }
+
+        .restart-btn { background: #dc2626; }
+        .restart-btn:hover { background: #b91c1c; }
+
+        .set-info { font-size: 22px; margin-bottom: 15px; color: #38bdf8; }
+    </style>
+</head>
+
+<body>
+
+    <!-- PAGE 1: Enter Team Names -->
+    <div id="menuPage" class="page active container">
+        <h1>🏸 Badminton Scoreboard</h1>
+        <h2>Enter Team Names</h2>
+
+        <input type="text" id="teamA" placeholder="Team A Name">
+        <input type="text" id="teamB" placeholder="Team B Name">
+
+        <button onclick="startGame()">Start Match</button>
+    </div>
+
+    <!-- PAGE 2: Scoreboard -->
+    <div id="scorePage" class="page container">
+        <h1 id="matchTitle"></h1>
+
+        <div class="set-info" id="setInfo">Set 1 • Best of 3</div>
+
+        <p class="team-label" id="labelA"></p>
+        <div class="score-display" id="scoreA">0</div>
+        <button onclick="addPoint('A')">+1 to Team A</button>
+
+        <br><br>
+
+        <p class="team-label" id="labelB"></p>
+        <div class="score-display" id="scoreB">0</div>
+        <button onclick="addPoint('B')">+1 to Team B</button>
+    </div>
+
+    <!-- PAGE 3: Winner Page -->
+    <div id="winnerPage" class="page container">
+        <h1>🏆 Match Winner</h1>
+        <h2 id="winnerName"></h2>
+        <p id="finalScore"></p>
+        <button class="restart-btn" onclick="resetGame()">Restart</button>
+    </div>
+
+    <script>
+        // Team names
+        let nameA = "", nameB = "";
+
+        // Points in current set
+        let scoreA = 0, scoreB = 0;
+
+        // Set tracking
+        let currentSet = 1;
+        let setsA = 0, setsB = 0;
+
+        // Store scores like "21-18"
+        let allSetScores = [];
+
+        // Show one page at a time
+        function showPage(pageName) {
+            document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
+            document.getElementById(pageName).classList.add("active");
+        }
+
+        // Start the match after entering names
+        function startGame() {
+            nameA = document.getElementById("teamA").value || "Team A";
+            nameB = document.getElementById("teamB").value || "Team B";
+
+            document.getElementById("matchTitle").innerText = `${nameA} vs ${nameB}`;
+            document.getElementById("labelA").innerText = nameA;
+            document.getElementById("labelB").innerText = nameB;
+
+            showPage("scorePage");
+        }
+
+        // Add point to a team
+        function addPoint(team) {
+            if (team === 'A') scoreA++;
+            else scoreB++;
+
+            document.getElementById("scoreA").innerText = scoreA;
+            document.getElementById("scoreB").innerText = scoreB;
+
+            checkSetWinner();
+        }
+
+        // Check if the current set is finished
+        function checkSetWinner() {
+            let highest = Math.max(scoreA, scoreB);
+
+            if ((highest >= 21 && Math.abs(scoreA - scoreB) >= 2) || highest === 30) {
+                finishSet();
+            }
+        }
+
+        // When a set finishes
+        function finishSet() {
+            allSetScores.push(`${scoreA}-${scoreB}`);
+
+            if (scoreA > scoreB) setsA++;
+            else setsB++;
+
+            // Check match winner
+            if (setsA === 2 || setsB === 2) {
+                showMatchWinner();
+                return;
+            }
+
+            // Reset for next set
+            currentSet++;
+            scoreA = 0;
+            scoreB = 0;
+
+            document.getElementById("scoreA").innerText = "0";
+            document.getElementById("scoreB").innerText = "0";
+
+            document.getElementById("setInfo").innerText =
+                `Set ${currentSet} • Best of 3`;
+        }
+
+        // Show final winner screen
+        function showMatchWinner() {
+            let winner = setsA > setsB ? nameA : nameB;
+            document.getElementById("winnerName").innerText = winner;
+
+            let result = `Sets Won: ${nameA} ${setsA} - ${setsB} ${nameB}<br><br>`;
+            result += "Set Scores:<br>";
+            result += allSetScores.map((s, i) => `Set ${i + 1}: ${s}`).join("<br>");
+
+            document.getElementById("finalScore").innerHTML = result;
+
+            showPage("winnerPage");
+        }
+
+        // Restart entire match
+        function resetGame() {
+            // Reset all data
+            scoreA = 0;
+            scoreB = 0;
+            setsA = 0;
+            setsB = 0;
+            currentSet = 1;
+            allSetScores = [];
+
+            // Reset inputs
+            document.getElementById("teamA").value = "";
+            document.getElementById("teamB").value = "";
+            document.getElementById("scoreA").innerText = "0";
+            document.getElementById("scoreB").innerText = "0";
+            document.getElementById("setInfo").innerText = "Set 1 • Best of 3";
+
+            showPage("menuPage");
+        }
+    </script>
+
+</body>
+</html>
